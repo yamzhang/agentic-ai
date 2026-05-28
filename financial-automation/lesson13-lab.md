@@ -126,11 +126,14 @@ FEISHU_BITABLE_EXPENSE_TABLE=tblxxxxxxxx
 
 ### 5.1 配置重定向地址（手动，一次性）
 
-1. 打开 https://open.feishu.cn/ → 开发者后台 → 选择你的应用
+1. 打开 https://open.feishu.cn/ → 开发者后台 → 选择**龙虾对话所在的飞书应用**
 2. 进入「安全设置」→「重定向 URL」
 3. 添加：`http://localhost:8080/callback`
+4. 点击保存，确认显示「当前修改均已发布」
 
-> 只需要配置一次，之后不用重复操作。
+![安全设置 - 重定向 URL 配置](docs/screenshots/oauth_redirect_url_setup.png)
+
+> 只需要配置一次，之后不用重复操作。注意要选对应用，用的是龙虾（OpenClaw）所在的那个飞书应用，不是其他应用。
 
 ### 5.2 获取授权链接（发给龙虾）
 
@@ -140,16 +143,20 @@ FEISHU_BITABLE_EXPENSE_TABLE=tblxxxxxxxx
 
 redirect_uri 使用：http://localhost:8080/callback
 
-把完整的授权链接发给我，我直接点击完成授权。
+注意：redirect_uri 不要 URL 编码，直接用明文，方便我复制到浏览器。
 ```
 
-龙虾会返回一条可点击的链接。在浏览器打开后完成飞书登录授权，浏览器会跳转到：
+龙虾会返回授权链接。**不要在飞书里直接点击**，复制链接后粘贴到浏览器地址栏打开（飞书聊天会对链接二次处理导致参数错误）。完成飞书登录授权后，浏览器会跳转到：
 
 ```
 http://localhost:8080/callback?code=XXXXXX
 ```
 
-复制 `code=` 后面的值。
+浏览器显示无法访问是正常的（本地没有监听 8080 端口），但地址栏里已经有 `code=` 参数，直接从地址栏复制即可。
+
+![浏览器回调地址栏中的 code](docs/screenshots/oauth_callback_code.png)
+
+复制 `code=` 后面的值（到末尾或下一个 `&` 之前）。
 
 ### 5.3 换 token（发给龙虾）
 
