@@ -222,12 +222,11 @@ code: 你复制的code
 ```
 请把 financial-expense-automation Skill 注册到 OpenClaw，分三步：
 
-第一步：找到 OpenClaw 的 skills 目录（你自己知道路径），在该目录下创建软链接：
-ln -sfn ~/projects/agentic-ai/financial-automation/skills/financial-expense-automation \
-  <OpenClaw_skills_目录>/financial-expense-automation
-用软链接而不是复制，这样后续 git pull 更新源文件后不需要重新注册。
+第一步：将 Skill 目录复制到 OpenClaw 的 skills 目录：
+cp -r ~/projects/agentic-ai/financial-automation/skills/financial-expense-automation \
+  ~/.openclaw/workspace/skills/financial-expense-automation
 
-第二步：在 OpenClaw 的 .env（或等效的环境配置文件）中，永久添加以下环境变量：
+第二步：在 ~/.openclaw/.env 中添加以下环境变量（文件不存在则新建）：
 FINANCIAL_AUTOMATION_ROOT=~/projects/agentic-ai/financial-automation
 
 第三步：重载 Skill 配置，然后执行 /skills list，确认列表中出现 financial-expense-automation。
