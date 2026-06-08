@@ -46,11 +46,26 @@ def main() -> None:
         for item in input_items
         if isinstance(item, dict) and str(item.get("rank_id", "")).strip()
     }
+    if not rank_input_map:
+        rank_input_map = {
+            f"ID{item.get('shortlist_rank')}": item
+            for item in input_items
+            if isinstance(item, dict) and item.get("shortlist_rank") is not None
+        }
     title_input_map = {
         str(item.get("title", "")).strip(): item
         for item in input_items
         if isinstance(item, dict) and str(item.get("title", "")).strip()
     }
+
+    valid_rank_ids = set(rank_input_map.keys())
+    valid_titles = set(title_input_map.keys())
+    draft_rank_ids = [str(draft.get("rank_id", "")).strip() for draft in drafts if isinstance(draft, dict) and str(draft.get("rank_id", "")).strip()]
+    draft_titles = [str(draft.get("title", "")).strip() for draft in drafts if isinstance(draft, dict) and str(draft.get("title", "")).strip()]
+    rank_matches = [rank_id for rank_id in draft_rank_ids if rank_id in valid_rank_ids]
+    title_matches = [title for title in draft_titles if title in valid_titles]
+    if drafts and not rank_matches and not title_matches:
+        raise SystemExit("draft results appear stale or mismatched: no draft entries match current input by rank_id or title")
 
     drafted_items: List[Dict[str, Any]] = []
     seen_keys: set[str] = set()

@@ -44,6 +44,22 @@ def main() -> None:
         raise SystemExit("invalid input format")
 
     if isinstance(top10_rank_ids, list) and top10_rank_ids:
+        available_rank_ids = set()
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            rank_id = str(item.get("rank_id", "")).strip()
+            if not rank_id:
+                shortlist_rank = item.get("shortlist_rank")
+                rank_id = f"ID{shortlist_rank}" if shortlist_rank is not None else ""
+            if rank_id:
+                available_rank_ids.add(rank_id)
+        matched_rank_ids = [str(rank_id).strip() for rank_id in top10_rank_ids if str(rank_id).strip() in available_rank_ids]
+        if top10_rank_ids and (not matched_rank_ids or len(matched_rank_ids) < min(len(top10_rank_ids), max(3, len(top10_rank_ids) // 2))):
+            raise SystemExit(
+                f"ranking results appear stale or mismatched: matched {len(matched_rank_ids)}/{len(top10_rank_ids)} rank ids against current input"
+            )
+
         ranking_map = {str(rank_id).strip(): idx for idx, rank_id in enumerate(top10_rank_ids, 1) if str(rank_id).strip()}
         publishable: List[Dict[str, Any]] = []
         for item in items:
@@ -69,6 +85,22 @@ def main() -> None:
     else:
         if not isinstance(top10_titles, list):
             raise SystemExit("invalid input format")
+        available_titles = set()
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            title = str(item.get("title", "")).strip()
+            title_zh = str(item.get("title_zh", "")).strip()
+            if title:
+                available_titles.add(title)
+            if title_zh:
+                available_titles.add(title_zh)
+        matched_titles = [str(title).strip() for title in top10_titles if str(title).strip() in available_titles]
+        if top10_titles and (not matched_titles or len(matched_titles) < min(len(top10_titles), max(3, len(top10_titles) // 2))):
+            raise SystemExit(
+                f"ranking results appear stale or mismatched: matched {len(matched_titles)}/{len(top10_titles)} titles against current input"
+            )
+
         ranking_map = {str(title).strip(): idx for idx, title in enumerate(top10_titles, 1) if str(title).strip()}
         publishable: List[Dict[str, Any]] = []
         for item in items:

@@ -18,11 +18,22 @@ from morning_newspaper.models import utc_now_iso
 
 PROMPT_TEXT = """你是 AI 早报编辑。
 请只根据下面这批候选标题，按“AI 最新的技术进展和商业化落地”这个主题做相关性排序。
-优先考虑和 AI 技术、模型、Agent、产品发布、开源工具、企业采用、融资并购直接相关的标题。
-重复主题、重复项目、重复事件尽量靠后，但除非完全重复，不要过早丢弃候选。
-这一步的目标不是把候选裁得很少，而是给后续 Top10 提供一个足够宽的有序候选池。
-请尽量返回前 15 条；如果总候选不足 15 条，就按实际数量输出。
-只输出 JSON：
+
+优先考虑：
+1. AI 技术、模型、Agent、产品发布、开源工具、企业采用、融资并购直接相关的标题。
+2. 对今天的中文 AI 早报更有信息密度、更新价值和代表性的标题。
+3. 不同来源、不同子主题的覆盖面，不要让候选池被同一来源或同一类重复内容占满。
+
+明确要求：
+- 这一步的目标不是把候选裁得很少，而是给后续 Top10 提供一个足够宽、足够多样的有序候选池。
+- 尽量保留来自不同来源的代表项；如果 GitHub 高星项目或 Hacker News 热门故事中有明显相关项，应优先至少保留少量代表项，不要被单一来源全部挤出。
+- 对完全重复、近似重复、同一页面不同搜索命中的标题，只保留最有代表性的一条，其余排到很后面或直接不选。
+- 如果某个标题明显与 AI 主线无关，可以不选。
+
+输出要求：
+- 尽量返回前 15 条；如果高相关候选不足 15 条，可少于 15 条。
+- 同标题不要重复返回。
+- 只输出 JSON：
 
 {
   "ranked_titles": ["标题1", "标题2"]
@@ -52,6 +63,7 @@ def main() -> None:
 
     candidates = [_to_title_candidate(item) for item in items if isinstance(item, dict)]
     candidates = [item for item in candidates if item["title"]]
+    candidates = _dedupe_candidates(candidates)
 
     write_json(Path(args.titles_json), {
         "generated_at": utc_now_iso(),
@@ -75,6 +87,18 @@ def _to_title_candidate(item: Dict[str, Any]) -> Dict[str, Any]:
         "source_name": str(item.get("source_name", "")).strip(),
         "published_at": str(item.get("published_at", "")).strip(),
     }
+
+
+def _dedupe_candidates(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    deduped: List[Dict[str, Any]] = []
+    seen_titles: set[str] = set()
+    for item in candidates:
+        title = str(item.get("title", "")).strip()
+        if not title or title in seen_titles:
+            continue
+        seen_titles.add(title)
+        deduped.append(item)
+    return deduped
 
 
 def _render_preview(candidates: List[Dict[str, Any]]) -> str:

@@ -314,7 +314,7 @@ def _topic_icon(item: Dict[str, Any]) -> str:
         return "📰"
     if source_type == "rss":
         return "🌐"
-    if source_type == "tavily_skill":
+    if source_type in {"tavily_skill", "tavily_api"}:
         if "github.com" in url:
             return "🧰"
         if "news.ycombinator.com" in url:

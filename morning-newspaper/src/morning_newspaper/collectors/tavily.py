@@ -117,8 +117,8 @@ def execute_tavily_plan(plan_path: Path, results_path: Path) -> int:
             out_items.append({
                 "topic_id": topic_id,
                 "topic_name": topic_name,
-                "source_name": "OpenClaw Tavily",
-                "source": "tavily-search",
+                "source_name": "Tavily Search",
+                "source": "tavily-api",
                 "title": title,
                 "url": url,
                 "summary": compact_text(r.get("content")),
@@ -156,10 +156,10 @@ def read_tavily_results(path: Path) -> List[RawItem]:
         if not title or not url:
             continue
         out.append(raw_item_from_fields(
-            source_id="openclaw_tavily",
-            source_name=compact_text(raw.get("source_name") or raw.get("source")) or "OpenClaw Tavily",
+            source_id="tavily_search",
+            source_name=compact_text(raw.get("source_name") or raw.get("source")) or "Tavily Search",
             source_group="primary",
-            source_type="tavily_skill",
+            source_type="tavily_api",
             title=title,
             url=url,
             published_at=compact_text(raw.get("published_at") or raw.get("published_date")),
@@ -167,6 +167,7 @@ def read_tavily_results(path: Path) -> List[RawItem]:
             raw_metadata={
                 "topic_id": compact_text(raw.get("topic_id")),
                 "source": compact_text(raw.get("source") or raw.get("source_name")),
+                "published_date_raw": compact_text(raw.get("published_date")),
             },
             fetched_at=compact_text(raw.get("fetched_at")) or utc_now_iso(),
         ))

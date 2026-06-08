@@ -50,9 +50,9 @@ paused_sources:
   - id: executive_mailbox
     reason: 私有提醒不进入公开早报。
 
-openclaw_tavily:
+tavily_search:
   enabled: true
-  skill_name: tavily-search
+  provider: tavily-rest-api
   max_items_per_topic: 5
   recency_days: 3
   fallback_recency_days: 3

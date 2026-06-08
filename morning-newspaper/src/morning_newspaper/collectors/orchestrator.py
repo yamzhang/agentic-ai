@@ -29,7 +29,7 @@ def collect_all(config: Dict[str, Any], *, root: Path) -> tuple[List[RawItem], L
         except Exception as exc:
             reports.append(_report(source, "failed", 0, str(exc)))
 
-    tavily_cfg = config.get("openclaw_tavily", {})
+    tavily_cfg = config.get("tavily_search", {}) or config.get("openclaw_tavily", {})
     if isinstance(tavily_cfg, dict) and tavily_cfg.get("enabled", False):
         runtime_dir = root / str(config.get("runtime", {}).get("output_dir", "runtime"))
         plan_path = runtime_dir / "tavily_search_plan.json"
@@ -37,7 +37,7 @@ def collect_all(config: Dict[str, Any], *, root: Path) -> tuple[List[RawItem], L
         results_path = runtime_dir / "tavily_search_results.json"
         executed = execute_tavily_plan(plan_path, results_path)
         reports.append({
-            "source_id": "openclaw_tavily",
+            "source_id": "tavily_search",
             "source_type": "tavily_plan",
             "status": "plan_executed" if executed else "plan_written",
             "item_count": executed,
@@ -47,7 +47,7 @@ def collect_all(config: Dict[str, Any], *, root: Path) -> tuple[List[RawItem], L
         if fetched:
             fetched = _filter_recent_items(fetched, lookback_days=lookback_days)
             reports.append({
-                "source_id": "openclaw_tavily",
+                "source_id": "tavily_search",
                 "source_type": "tavily_results",
                 "status": "ok",
                 "item_count": len(fetched),

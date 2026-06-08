@@ -81,7 +81,17 @@ python scripts/run_daily_pipeline.py
 - `runtime/draft_result.json`（中文成稿结果）
 - `runtime/top10_ranking_result.json`（Top10 精排结果）
 
-这三个文件由 OpenClaw 在执行 Skill 时自动生成。如果缺失，脚本报错并指出缺少哪一步，不会静默跳过。完整的 Skill 驱动流程参见 `lesson14-lab.md` 实验手册。
+这三个文件由 OpenClaw 在执行 Skill 时自动生成。如果缺失，脚本报错并指出缺少哪一步，不会静默跳过。默认情况下，主流程会从 `runtime_results/` 读取这三个结果文件；如需显式指定目录，可使用：
+
+```bash
+python scripts/run_daily_pipeline.py --results-dir <目录>
+```
+
+建议约定：
+- `runtime/`：正式运行时产物（collect/enrich/shortlist/drafted/publishable/dashboard）
+- `runtime_results/`：本轮 LLM / 人工回填结果（`title_shortlist_result.json`、`draft_result.json`、`top10_ranking_result.json`）
+
+这样可以把人工恢复、实验回填与正式产物隔离，避免临时回填污染正式链路。完整的 Skill 驱动流程参见 `lesson14-lab.md` 实验手册。
 
 ## 核心模块
 
@@ -108,11 +118,13 @@ python scripts/run_daily_pipeline.py
 |---|---|---|
 | 1. 多源采集 | `runtime/collected_raw.json` | 统一格式的原始候选池 |
 | 2. 正文抓取 | `runtime/content_enriched.json` | 补正文、抓取状态、正文长度 |
-| 3. 标题粗筛 | `runtime/title_shortlist_result.json` | LLM 关口 1：保留 10-15 条相关标题 |
-| 4. 中文成稿 | `runtime/draft_result.json` | LLM 关口 2：生成中文标题和摘要 |
-| 5. Top10 精排 | `runtime/top10_ranking_result.json` | LLM 关口 3：最终排序 |
+| 3. 标题粗筛 | `runtime_results/title_shortlist_result.json`（或 `--results-dir` 指定目录） | LLM 关口 1：保留 10-15 条相关标题 |
+| 4. 中文成稿 | `runtime_results/draft_result.json`（或 `--results-dir` 指定目录） | LLM 关口 2：生成中文标题和摘要 |
+| 5. Top10 精排 | `runtime_results/top10_ranking_result.json`（或 `--results-dir` 指定目录） | LLM 关口 3：最终排序 |
 | 6. 发布层 | `runtime/top10_publishable.json` | 页面只读取这个文件 |
 | 7. 页面生成 | `runtime/dashboard.html` | 可直接打开的静态早报页面 |
+
+说明：`Top10` 是发布层的目标上限，不是硬性凑数目标。如果某一轮真正符合主题和质量要求的候选不足 10 条，应按实际 `publishable` 条数交付，不要为了凑满 10 条引入明显偏题、重复或低质量内容。
 
 邮箱侧链独立运行，产物为 `runtime/executive_mailbox.json`（紧急事务卡片）和 `runtime/mail_event_queue.json`（未来事项队列），不参与 Top10 排序。
 
@@ -226,7 +238,7 @@ topics:
 
 一次完整成功必须同时满足：
 
-1. `runtime/top10_publishable.json` 存在且 count = 10
+1. `runtime/top10_publishable.json` 存在且 count > 0；若高质量候选不足 10 条，允许按实际 publishable 条数交付
 2. `runtime/dashboard.html` 已更新，无 `[TEST]` 占位摘要
 3. `scripts/check_runtime_status.py` 通过
 4. 页面服务监听 `0.0.0.0:8510`，公网可访问

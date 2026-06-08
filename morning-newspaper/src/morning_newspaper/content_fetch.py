@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 import html
 import re
 from typing import Any, Dict, List
@@ -82,16 +83,19 @@ def _fetch_web_page(item: Dict[str, Any], url: str, *, preferred_method: str = "
     try:
         raw = _http_text(url)
     except Exception as exc:
+        fallback_published_at = _resolve_published_at(item, raw_html="")
         return _with_fetch_result(
             item,
             fetch_status="failed",
             extract_method=preferred_method,
             body_text="",
             note=f"fetch failed: {type(exc).__name__}",
+            published_at=fallback_published_at,
         )
 
     extracted = _extract_main_text(raw, url=url)
     clean = _clean_text(extracted)
+    published_at = _resolve_published_at(item, raw_html=raw)
     if len(clean) < MIN_BODY_CHARS:
         return _with_fetch_result(
             item,
@@ -99,6 +103,7 @@ def _fetch_web_page(item: Dict[str, Any], url: str, *, preferred_method: str = "
             extract_method=preferred_method,
             body_text=clean,
             note=f"extracted text too short: {len(clean)} chars",
+            published_at=published_at,
         )
     return _with_fetch_result(
         item,
@@ -106,6 +111,7 @@ def _fetch_web_page(item: Dict[str, Any], url: str, *, preferred_method: str = "
         extract_method=preferred_method,
         body_text=clean,
         note="",
+        published_at=published_at,
     )
 
 
@@ -161,6 +167,57 @@ def _meta_description(raw_html: str) -> str:
     if not match:
         match = re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']description["\']', raw_html, re.I)
     return html.unescape(match.group(1)).strip() if match else ""
+
+
+def _resolve_published_at(item: Dict[str, Any], *, raw_html: str) -> str:
+    existing = compact_text(item.get("published_at"))
+    if existing:
+        return existing
+
+    source_type = compact_text(item.get("source_type"))
+    if source_type == "tavily_api":
+        inferred = _extract_published_at_from_html(raw_html)
+        if inferred:
+            return inferred
+        fetched_at = compact_text(item.get("fetched_at"))
+        if fetched_at:
+            return fetched_at
+        return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    return existing
+
+
+def _extract_published_at_from_html(raw_html: str) -> str:
+    patterns = [
+        r'<meta[^>]+property=["\']article:published_time["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']article:published_time["\']',
+        r'<meta[^>]+name=["\']pubdate["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+name=["\']publish-date["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+name=["\']date["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<time[^>]+datetime=["\']([^"\']+)["\']',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, raw_html, re.I)
+        if not match:
+            continue
+        value = html.unescape(match.group(1)).strip()
+        normalized = _normalize_datetime(value)
+        if normalized:
+            return normalized
+    return ""
+
+
+def _normalize_datetime(value: str) -> str:
+    text = compact_text(value)
+    if not text:
+        return ""
+    text = text.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return ""
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.replace(microsecond=0).isoformat()
 
 
 def _html_to_text(raw_html: str) -> str:
@@ -260,6 +317,7 @@ def _with_fetch_result(
     extract_method: str,
     body_text: str,
     note: str,
+    published_at: str | None = None,
 ) -> Dict[str, Any]:
     out = dict(item)
     clean = body_text[:MAX_BODY_CHARS].strip()
@@ -270,4 +328,6 @@ def _with_fetch_result(
         "body_length": len(clean),
         "note": note,
     })
+    if published_at:
+        out["published_at"] = published_at
     return out

@@ -1,0 +1,100 @@
+{
+  "drafts": [
+    {
+      "rank_id": "ID1",
+      "title": "OpenCode – Open source AI coding agent - Hacker News",
+      "title_zh": "OpenCode：开源 AI 编码 Agent 引发社区关注",
+      "summary_main": "这条内容来自 Hacker News 热帖，围绕 OpenCode 这一开源 AI coding agent 的体验、架构和工程取舍展开讨论。它反映出开发者社区对通用编码 Agent、容器隔离和高频迭代工具链的持续关注。",
+      "published_at": "",
+      "url": "https://news.ycombinator.com/item?id=47460525"
+    },
+    {
+      "rank_id": "ID2",
+      "title": "Building your own CLI coding agent with Pydantic-AI | Hacker News",
+      "title_zh": "用 Pydantic-AI 自建 CLI 编码 Agent 的实践讨论",
+      "summary_main": "该话题聚焦如何基于 Pydantic-AI 搭建自己的命令行编码 Agent，并延伸到开源框架、可观测性与实现细节。它体现出 Agent 开发工具链正在从 Demo 走向更可组合的工程实践。",
+      "published_at": "",
+      "url": "https://news.ycombinator.com/item?id=45055439"
+    },
+    {
+      "rank_id": "ID3",
+      "title": "How to code Claude Code in 200 lines of code | Hacker News",
+      "title_zh": "用 200 行代码实现 Claude Code 思路的社区讨论",
+      "summary_main": "这条内容围绕一个精简版编码 Agent 实现展开，并引出社区对开源 coding agent 设计方式、异步架构和可复用实现的讨论。它代表了近期开发者对轻量 Agent 实现路径的兴趣。",
+      "published_at": "",
+      "url": "https://news.ycombinator.com/item?id=46545620"
+    },
+    {
+      "rank_id": "ID4",
+      "title": "GitAgent – An open standard that turns any Git repo into an AI agent",
+      "title_zh": "GitAgent：把任意 Git 仓库标准化成 AI Agent",
+      "summary_main": "GitAgent 试图把 agent 定义抽象成一组仓库文件，使同一套 Agent 描述可以导出到不同框架和运行时。这个方向指向 Agent 基础设施层的互操作性问题，也说明开发者开始关注 agent 规范而不只是单一产品。",
+      "published_at": "",
+      "url": "https://news.ycombinator.com/item?id=47376584"
+    },
+    {
+      "rank_id": "ID5",
+      "title": "Daily Papers - Hugging Face",
+      "title_zh": "Hugging Face Daily Papers 收录多篇 AI 新论文动态",
+      "summary_main": "该候选代表当日论文面板里的 AI 研究动态，适合作为技术趋势补位。它的信息密度不如单篇重磅发布，但能反映研究前沿的活跃方向。",
+      "published_at": "",
+      "url": "https://huggingface.co/papers?q=multimodal+reasoning"
+    },
+    {
+      "rank_id": "ID7",
+      "title": "Citigroup lifts AI market view to over $4 trillion on enterprise adoption",
+      "title_zh": "花旗上调 AI 市场规模预期，企业采用被视为核心驱动",
+      "summary_main": "花旗将 AI 市场空间预期抬升至更高水平，理由主要来自企业侧采用和商业化落地提速。它反映资本市场仍在强化对 AI 长期需求的判断。",
+      "published_at": "",
+      "url": "https://www.reuters.com/business/finance/citigroup-lifts-ai-market-view-over-4-trillion-enterprise-adoption-2026-04-28"
+    },
+    {
+      "rank_id": "ID8",
+      "title": "Snowflake Revenue Rises As AI Adoption Accelerates - WSJ",
+      "title_zh": "Snowflake 受 AI 采用带动，收入增长继续走强",
+      "summary_main": "这条商业线索显示企业数据与云平台正在持续受益于 AI 相关需求释放。它属于 AI 基础设施商业兑现向财务指标传导的典型信号。",
+      "published_at": "",
+      "url": "https://www.wsj.com/business/earnings/snowflake-revenue-rises-as-ai-adoption-accelerates-b9a18d7c?eafs_enabled=false"
+    },
+    {
+      "rank_id": "ID9",
+      "title": "Europe’s big AI hope SAP books 85% of 2026 revenue as deals boom",
+      "title_zh": "SAP 称 AI 正成为客户签单的重要驱动因素",
+      "summary_main": "SAP 管理层在采访中强调，AI 已成为推动客户签约和云收入增长的关键因素之一。它说明大型企业软件厂商也在把 AI 当作核心商业增长抓手，而不只是附加功能。",
+      "published_at": "",
+      "url": "https://www.cnbc.com/2025/10/23/europes-big-ai-hope-sap-books-85percent-of-2026-revenue-as-deals-boom-.html"
+    },
+    {
+      "rank_id": "ID12",
+      "title": "AI startup Cursor raises $2.3 billion funding round at $29.3 ... - CNBC",
+      "title_zh": "Cursor 完成新一轮大额融资，AI 编码赛道继续升温",
+      "summary_main": "Cursor 再获大额融资，说明资本市场仍然高度看好 AI coding 工具的增长潜力。它也是应用层 AI 产品中最接近规模化收入验证的一条主线。",
+      "published_at": "",
+      "url": "https://www.cnbc.com/2025/11/13/cursor-ai-startup-funding-round-valuation.html"
+    },
+    {
+      "rank_id": "ID14",
+      "title": "Exclusive: Microsoft eyeing startup deals for life after OpenAI - Reuters",
+      "title_zh": "微软据称在为 OpenAI 之外的 AI 布局寻找更多收购机会",
+      "summary_main": "这条 Reuters 线索显示微软可能在围绕后 OpenAI 时代预做布局，寻求通过并购或投资补强 AI 资产。它反映头部平台公司正在加快建立更独立的 AI 战略纵深。",
+      "published_at": "",
+      "url": "https://www.reuters.com/world/microsoft-eyeing-startup-deals-life-after-openai-2026-05-13"
+    },
+    {
+      "rank_id": "ID15",
+      "title": "yuzhworkhard-wq/image-to-code",
+      "title_zh": "image-to-code：从设计稿到前端代码的开源生成工具",
+      "summary_main": "这个 GitHub 项目聚焦把图像界面快速转成代码，贴近当前 AI 辅助开发和设计到实现自动化的主线。虽然还需要进一步验证成熟度，但方向上与 AI coding 工具演进一致。",
+      "published_at": "2026-06-06T03:01:49+00:00",
+      "url": "https://github.com/yuzhworkhard-wq/image-to-code"
+    },
+    {
+      "rank_id": "ID16",
+      "title": "1k Data Breaches Later, the Disclosure Lag Is Worse",
+      "title_zh": "千起数据泄露复盘揭示披露滞后问题",
+      "summary_main": "这条 Hacker News 热门内容更偏向安全与合规话题，本身并不属于今天 AI 主线。保留它主要是为了验证来源多样性策略，而不是作为本轮头部核心新闻。",
+      "published_at": "2026-06-08T03:17:10+00:00",
+      "url": "https://www.troyhunt.com/1000-data-breaches-later-the-disclosure-lag-is-worse-than-ever/"
+    }
+  ]
+}

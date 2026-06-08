@@ -1,5 +1,61 @@
 # Changelog
 
+## 2026-06-08 早报稳定性修复与命名清理
+
+### 流程一致性与结果隔离
+
+- `scripts/run_daily_pipeline.py`
+  - 新增结果文件一致性校验：`title_shortlist_result.json`、`draft_result.json`、`top10_ranking_result.json` 必须和本轮输入匹配，避免旧回填结果串轮次复用
+  - 新增 `--results-dir` 参数，并默认改为从 `runtime_results/` 读取结果文件
+  - apply 阶段显式传入结果文件路径，不再隐式依赖 `runtime/` 中的临时文件
+- `scripts/cron_generate_morning_newspaper.py`
+  - cron 调用改为显式走 `--results-dir runtime_results`
+  - 失败归因可区分 `shortlist / draft / ranking / quality`，不再把串轮次问题误报成 collect
+- 新增 `runtime_results/` 目录约定，用于隔离 LLM / 人工回填结果与正式运行时产物
+
+### shortlist 策略增强
+
+- `scripts/prepare_title_shortlist.py`
+  - 标题粗筛 Prompt 增加来源多样性约束，避免单一来源占满候选池
+  - 候选标题预去重，避免重复标题挤占 shortlist 配额
+- `scripts/apply_title_shortlist.py`
+  - shortlist 再按标题去重
+  - 若 GitHub / Hacker News 被完全挤出，补入少量代表项，保证基础来源多样性
+
+### draft / ranking 稳定性修复
+
+- `scripts/apply_draft_results.py`
+  - 增加当前输入匹配校验，避免旧 draft 结果直接套到新一轮输入
+- `scripts/apply_top10_ranking.py`
+  - 增加 ranking 结果和当前 `top10_ranking_input.json` 的一致性校验，避免旧 rank_id 混入
+
+### 质量检查与交付标准调整
+
+- `scripts/check_runtime_status.py`
+  - 增加 `draft_input_count`、`ranking_input_count`、`shortlist_titles`、`drafted_titles`、`publishable_titles` 等诊断字段
+  - 交付标准从“必须凑满 10 条”调整为“只要 publishable 非空、页面正常、无占位摘要即可交付”；若高质量候选不足 10 条，允许按实际 publishable 条数交付
+- `README.md`
+  - 同步更新 `runtime/` 与 `runtime_results/` 的职责说明
+  - 明确 `Top10` 是发布目标上限，不是硬性凑数目标
+
+### Tavily REST API 命名清理与发布时间补齐
+
+- `config/sources.yaml`
+  - 配置段从 `openclaw_tavily` 统一为 `tavily_search`
+- `src/morning_newspaper/collectors/orchestrator.py`
+  - Tavily source_id 统一为 `tavily_search`
+- `src/morning_newspaper/collectors/tavily.py`
+  - 展示命名从 `OpenClaw Tavily` / `tavily_skill` 统一为 `Tavily Search` / `tavily_api`
+  - 保留对旧配置键的兼容读取
+  - 记录 `published_date_raw` 以便排查上游返回
+- `src/morning_newspaper/dashboard.py`
+  - 图标逻辑兼容 `tavily_api`
+- `src/morning_newspaper/content_fetch.py`
+  - Tavily 条目若 API 未返回发布时间，会在抓正文时尝试从 HTML 元标签补齐
+  - 若二次尝试仍拿不到，回退为 `fetched_at`
+  - 即使正文抓取失败，也会回退为抓取时间，避免页面出现空发布时间
+
+
 ## 实验手册重写与 Skill 注册对齐
 
 - `lesson14-lab.md` — 全文重写，对齐第 13 节 financial-automation 的飞书对话驱动模式：
