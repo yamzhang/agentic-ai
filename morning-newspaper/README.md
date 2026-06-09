@@ -5,17 +5,17 @@
 把 GitHub、Hacker News、RSS、Tavily 搜索和邮箱等异构信号源，经过三道 LLM 编辑关口（标题粗筛 → 中文成稿 → Top10 精排），压缩成每日可交付的 AI 早报页面和飞书推送消息。
 
 ```
-sources.yaml → collect_raw → enrich_content
-                                   ↓
-                          ┌────────────────┐
-                          │  标题粗筛       │ ← LLM 关口 1
-                          │  中文成稿       │ ← LLM 关口 2
-                          │  Top10 精排     │ ← LLM 关口 3
-                          └────────┬───────┘
-                                   ↓
-              邮箱采集 ──→ dashboard.html ──→ 飞书推送
-                          (Top10 + 紧急事务)
+数据源 (GitHub / HN / Tavily / RSS / 邮箱)
+    ↓ 采集与准备（纯脚本）
+collected_raw → enrich → title_candidates
+    ↓ LLM 关口 1：标题粗筛
+    ↓ LLM 关口 2：中文成稿
+    ↓ LLM 关口 3：Top10 精排 + 多样性约束
+    ↓
+dashboard.html ──→ 8510 固定链接 + 飞书推送
 ```
+
+> 完整架构说明见 [docs/architecture.md](docs/architecture.md)
 
 ![早报 Dashboard 效果](docs/screenshots/dashboard-demo.png)
 
@@ -81,17 +81,9 @@ python scripts/run_daily_pipeline.py
 - `runtime/draft_result.json`（中文成稿结果）
 - `runtime/top10_ranking_result.json`（Top10 精排结果）
 
-这三个文件由 OpenClaw 在执行 Skill 时自动生成。如果缺失，脚本报错并指出缺少哪一步，不会静默跳过。默认情况下，主流程会从 `runtime_results/` 读取这三个结果文件；如需显式指定目录，可使用：
+这三个文件由 OpenClaw 在执行 Skill 时按三个 LLM 关口逐步生成。如果缺失，脚本报错并指出缺少哪一步，不会静默跳过。每个 apply 脚本还会校验结果文件的修改时间（mtime）是否晚于输入文件，防止上一轮遗留的旧结果串入当前流程。
 
-```bash
-python scripts/run_daily_pipeline.py --results-dir <目录>
-```
-
-建议约定：
-- `runtime/`：正式运行时产物（collect/enrich/shortlist/drafted/publishable/dashboard）
-- `runtime_results/`：本轮 LLM / 人工回填结果（`title_shortlist_result.json`、`draft_result.json`、`top10_ranking_result.json`）
-
-这样可以把人工恢复、实验回填与正式产物隔离，避免临时回填污染正式链路。完整的 Skill 驱动流程参见 `lesson14-lab.md` 实验手册。
+所有中间产物和 LLM 结果文件统一存放在 `runtime/` 目录。完整的执行流程参见 `SKILL.md` 和 `lesson14-lab.md` 实验手册。
 
 ## 核心模块
 
@@ -118,9 +110,9 @@ python scripts/run_daily_pipeline.py --results-dir <目录>
 |---|---|---|
 | 1. 多源采集 | `runtime/collected_raw.json` | 统一格式的原始候选池 |
 | 2. 正文抓取 | `runtime/content_enriched.json` | 补正文、抓取状态、正文长度 |
-| 3. 标题粗筛 | `runtime_results/title_shortlist_result.json`（或 `--results-dir` 指定目录） | LLM 关口 1：保留 10-15 条相关标题 |
-| 4. 中文成稿 | `runtime_results/draft_result.json`（或 `--results-dir` 指定目录） | LLM 关口 2：生成中文标题和摘要 |
-| 5. Top10 精排 | `runtime_results/top10_ranking_result.json`（或 `--results-dir` 指定目录） | LLM 关口 3：最终排序 |
+| 3. 标题粗筛 | `runtime/title_shortlist_result.json` | LLM 关口 1：保留 10-15 条相关标题 |
+| 4. 中文成稿 | `runtime/draft_result.json` | LLM 关口 2：生成中文标题和摘要 |
+| 5. Top10 精排 | `runtime/top10_ranking_result.json` | LLM 关口 3：最终排序 |
 | 6. 发布层 | `runtime/top10_publishable.json` | 页面只读取这个文件 |
 | 7. 页面生成 | `runtime/dashboard.html` | 可直接打开的静态早报页面 |
 
@@ -133,7 +125,7 @@ python scripts/run_daily_pipeline.py --results-dir <目录>
 | 范式 | 代表来源 | 核心特征 |
 |---|---|---|
 | 结构化 API | GitHub Search API、HN Firebase API | 先定义目标画像（stars/language/topic），再用官方接口查询 |
-| 动态搜索回填 | Tavily 搜索 | 先写搜索计划（`tavily_search_plan.json`），搜索执行交给外部 Skill |
+| 动态搜索回填 | Tavily 搜索 | 先写搜索计划（`tavily_search_plan.json`），直接调用 Tavily REST API 执行搜索 |
 | 私有状态读取 | 邮箱 IMAP/POP3（以 163 为例） | 维护事件队列，到期才触发——不是抓内容，是读状态 |
 
 看到不同来源，先判断该用哪种采集范式——这是课程传递的第一个方法论。
@@ -150,7 +142,7 @@ python scripts/run_daily_pipeline.py --results-dir <目录>
 
 ## Tavily 搜索配置
 
-Tavily 是早报的动态搜索回填来源，通过 OpenClaw 的 `tavily-search` Skill 执行搜索。在 `.env` 中配置 API Key：
+Tavily 是早报的动态搜索回填来源，采集脚本直接调用 Tavily REST API 执行搜索。在 `.env` 中配置 API Key：
 
 ```bash
 TAVILY_API_KEY=tvly-your_tavily_api_key
@@ -158,7 +150,7 @@ TAVILY_API_KEY=tvly-your_tavily_api_key
 
 > API Key 在 [tavily.com](https://tavily.com) 注册后获取，免费额度足够日常早报使用。
 
-搜索主题在 `config/sources.yaml` 的 `openclaw_tavily.topics` 段配置，每个主题包含搜索词和域名白名单：
+搜索主题在 `config/sources.yaml` 的 `tavily_search.topics` 段配置，每个主题包含搜索词和域名白名单：
 
 ```yaml
 topics:
@@ -229,10 +221,12 @@ topics:
 
 从"能跑一次"到"每天到达"需要四件事：
 
-1. **接入入口** — SKILL.md 让整个流水线可被一条命令触发
+1. **接入入口** — SKILL.md 让整个流水线可被 OpenClaw 触发
 2. **固定页面** — `dashboard.html` 通过 `serve_dashboard_8510.sh` 挂到公网
-3. **每日自动更新** — cron 每天 07:55 触发 `run_daily_pipeline.py`
-4. **主动推送** — 08:05 由 OpenClaw 向飞书群发送前三条 + 页面链接
+3. **每日自动生成** — 07:55 Cron 创建隔离 OpenClaw Session，执行完整流水线（含 3 个 LLM 关口）
+4. **分级推送** — 07:58 向飞书日报群发执行回执，08:05 发正式早报摘要或失败告警
+
+> 详细的调度架构和防护机制见 [docs/architecture.md](docs/architecture.md)
 
 ## 完成标准
 
@@ -251,6 +245,7 @@ morning-newspaper/
 ├── config/
 │   └── sources.yaml                         # 信号源配置：GitHub/HN/RSS/Tavily/邮箱
 ├── docs/
+│   ├── architecture.md                      # 系统架构：数据源、流水线、调度、防护机制
 │   ├── source_strategy.md                   # 信息源策略：三种采集范式、配置、数据模型
 │   └── screenshots/
 │       └── dashboard-demo.png               # 早报 Dashboard 运行效果截图
