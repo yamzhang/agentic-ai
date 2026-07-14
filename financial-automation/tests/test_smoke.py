@@ -566,19 +566,21 @@ class BitableWritePlanSmokeTest(unittest.TestCase):
                 }
             ]
         }
-        plan = build_bitable_write_plan(
-            skill_result,
-            attachment_paths=["/tmp/ticket.jpg"],
-            app_token="app_token_xxx",
-            config={
-                "sync": {
-                    "bitable": {
-                        "transport_table_id": "tbl_transport",
-                        "expense_table_id": "tbl_expense",
+        with patch("src.skill_entry.load_user_access_token") as mock_load_token:
+            mock_load_token.return_value = "test_user_token_123"
+            plan = build_bitable_write_plan(
+                skill_result,
+                attachment_paths=["/tmp/ticket.jpg"],
+                app_token="app_token_xxx",
+                config={
+                    "sync": {
+                        "bitable": {
+                            "transport_table_id": "tbl_transport",
+                            "expense_table_id": "tbl_expense",
+                        }
                     }
-                }
-            },
-        )
+                },
+            )
         self.assertEqual(plan["mode"], "user_identity")
         self.assertFalse(plan["include_attachments"])
         self.assertEqual(plan["write_policy"]["preferred"], "update_first_blank_row_then_create")
@@ -655,7 +657,7 @@ class BitableSyncSmokeTest(unittest.TestCase):
         self.assertEqual(record["车次"], "G240")
         self.assertEqual(record["乘车日期"], 1760198400000)
         self.assertEqual(record["校验状态"], "✅ 通过")
-        self.assertFalse(record["是否复核"])
+        self.assertEqual(record["是否复核"], "否")
 
     def test_build_expense_record(self) -> None:
         document = {
@@ -695,7 +697,7 @@ class BitableSyncSmokeTest(unittest.TestCase):
         self.assertEqual(record["项目名称"], "* 会展服务 * 注册费")
         self.assertEqual(record["开票日期"], 1724601600000)
         self.assertEqual(record["校验状态"], "✅ 通过")
-        self.assertFalse(record["是否复核"])
+        self.assertEqual(record["是否复核"], "否")
 
     def test_sync_skill_result_to_bitable_dry_run(self) -> None:
         settings = BitableSettings(
@@ -874,7 +876,7 @@ class SyncBitableSmokeTest(unittest.TestCase):
         self.assertEqual(fields["购票主体"], "Fudan")
         self.assertEqual(fields["车次"], "G240")
         self.assertEqual(fields["票据附件"][0]["file_token"], "file-token")
-        self.assertTrue(fields["是否复核"])
+        self.assertEqual(fields["是否复核"], "是")
 
     def test_build_expense_record_maps_first_line_item_and_json(self) -> None:
         document = {
@@ -917,7 +919,7 @@ class SyncBitableSmokeTest(unittest.TestCase):
 
         self.assertEqual(fields["报销类型"], "🧾 费用报销")
         self.assertEqual(fields["项目名称"], "会议费")
-        self.assertEqual(fields["税率"], "1%")
+        self.assertEqual(fields["税率"], 0.01)
         self.assertNotIn("项目明细JSON", fields)
 
     def test_sync_skill_result_to_bitable_supports_dry_run(self) -> None:
